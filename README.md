@@ -44,7 +44,7 @@ Ensure you have the following installed:
 
 1. Clone the repository:
    ```bash
-   git clone 
+   git clone https://github.com/shekhar-2410/Social_media.git
    cd Socail_media
    ```
 
