@@ -1,86 +1,74 @@
-#Social Media App
+# Social Media App
 
 A feature-rich social media application built with React, TypeScript, GraphQL, and Tailwind CSS. The app includes functionalities like user authentication, news feed, posting, following/unfollowing, and more.
 
-#Features
+## Features
 
-#User Login:
+- **User Login:**
+  - Secure sign-up and login using Firebase Auth.
 
-Secure sign-up and login using Firebase Auth.
+- **News Feed:**
+  - Displays posts from users you follow.
+  - Infinite scrolling for a smooth user experience.
 
-#News Feed:
+- **Posting:**
+  - Create new posts with text and images.
+  - Tag other users in posts.
 
-Displays posts from users you follow.
+- **Follow and Unfollow:**
+  - Follow and unfollow users to customize your feed.
 
-Infinite scrolling for a smooth user experience.
+- **TypeScript for Safety:**
+  - Strongly typed code to ensure reliability and minimize bugs.
 
-Posting:
+- **Styling with Tailwind CSS:**
+  - Responsive and modern design.
 
-Create new posts with text and images.
+## Technologies Used
 
-Tag other users in posts.
+- **Frontend:** React, TypeScript, Tailwind CSS
+- **GraphQL Client:** Apollo Client
+- **Backend:** Supabase (GraphQL Endpoint)
+- **Authentication:** Firebase Auth
 
-Follow and Unfollow:
+## Getting Started
 
-Follow and unfollow users to customize your feed.
-
-TypeScript for Safety:
-
-Strongly typed code to ensure reliability and minimize bugs.
-
-Styling with Tailwind CSS:
-
-Responsive and modern design.
-
-Technologies Used
-
-Frontend: React, TypeScript, Tailwind CSS
-
-GraphQL Client: Apollo Client
-
-Backend: Supabase (GraphQL Endpoint)
-
-Authentication: Firebase Auth
-
-Getting Started
-
-Prerequisites
+### Prerequisites
 
 Ensure you have the following installed:
 
-Node.js (>=14)
+- Node.js (>=14)
+- npm or yarn
 
-npm or yarn
+### Installation
 
-Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/social-media-app.git
+   cd social-media-app
+   ```
 
-Clone the repository:
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-git clone https://github.com/your-username/social-media-app.git
-cd social-media-app
+3. Configure Firebase Authentication:
+   - Create a Firebase project and enable Email/Password authentication.
+   - Copy your Firebase configuration and paste it into a `firebaseConfig.ts` file.
 
-Install dependencies:
+4. Configure Supabase:
+   - Set up a Supabase project and database tables for `users`, `posts`, and `follows`.
+   - Use the auto-generated GraphQL API URL and configure it in the Apollo Client setup.
 
-npm install
+5. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-Configure Firebase Authentication:
+### Project Structure
 
-Create a Firebase project and enable Email/Password authentication.
-
-Copy your Firebase configuration and paste it into a firebaseConfig.ts file.
-
-Configure Supabase:
-
-Set up a Supabase project and database tables for users, posts, and follows.
-
-Use the auto-generated GraphQL API URL and configure it in the Apollo Client setup.
-
-Start the development server:
-
-npm run dev
-
-Project Structure
-
+```
 .
 ├── public          # Static assets
 ├── src             # Source code
@@ -92,52 +80,22 @@ Project Structure
 ├── tailwind.config.js
 ├── vite.config.ts  # Vite configuration
 └── package.json
+```
 
-Scripts
+## Scripts
+- `npm run dev`: Start the development server.
+- `npm run build`: Build the app for production.
+- `npm run preview`: Preview the production build.
 
-npm run dev: Start the development server.
-
-npm run build: Build the app for production.
-
-npm run preview: Preview the production build.
-
-Deployment
+## Deployment
 
 Deploy the app on platforms like Vercel, Netlify, or your preferred hosting service. Ensure you set up environment variables for Firebase and Supabase configurations.
 
-Contributing
+## Acknowledgements
 
-Contributions are welcome! Feel free to open an issue or submit a pull request.
-
-Fork the repository.
-
-Create your feature branch:
-
-git checkout -b feature-name
-
-Commit your changes:
-
-git commit -m 'Add some feature'
-
-Push to the branch:
-
-git push origin feature-name
-
-Open a pull request.
-
-License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
-
-Acknowledgements
-
-Vite
-
-Tailwind CSS
-
-Supabase
-
-Firebase
-
-Apollo Client
+- [Vite](https://vitejs.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Supabase](https://supabase.com/)
+- [Firebase](https://firebase.google.com/)
+- [Apollo Client](https://www.apollographql.com/docs/react/)
 
