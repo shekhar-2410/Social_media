@@ -1,7 +1,7 @@
-import React, { useState, ChangeEvent, FormEvent } from "react";
-import { FiImage } from "react-icons/fi"; // Image icon
+import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
+import { FiImage } from "react-icons/fi";
+import NewsFeed from "./NewsFeed";
 
-// Define Post type
 interface Post {
   id: number;
   content: string;
@@ -14,20 +14,43 @@ const PostCard: React.FC = () => {
   const [postContent, setPostContent] = useState<string>("");
   const [image, setImage] = useState<string | null>(null);
 
-  const handlePostSubmit = (e: FormEvent<HTMLFormElement>): void => {
+  // Fetch posts on component mount
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get("/api/posts"); // Your API endpoint
+        setPosts(response.data); // Assuming the response is an array of posts
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
+  // Handle form submission
+  const handlePostSubmit = async (
+    e: FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
     if (!postContent && !image) return;
 
-    const newPost: Post = {
-      id: posts.length + 1,
+    const newPost = {
       content: postContent,
       image,
       timestamp: new Date().toLocaleString(),
     };
 
-    setPosts([newPost, ...posts]);
-    setPostContent("");
-    setImage(null);
+    try {
+      // Send the post data to your API
+      const response = await axios.post("/api/posts", newPost);
+      // After the post is created, fetch the updated list of posts
+      setPosts([response.data, ...posts]); // Add the new post to the state
+      setPostContent(""); // Clear the input fields
+      setImage(null);
+    } catch (error) {
+      console.error("Error posting:", error);
+    }
   };
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -40,9 +63,9 @@ const PostCard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-xl">
-      <div className="p-8 bg-card-color shadow-md ">
-        <form onSubmit={handlePostSubmit} className="relative">
+    <div className="max-w-2XL">
+      <div className="p-8 bg-card-color shadow-md">
+        <form onSubmit={handlePostSubmit} className="space-y-4">
           <textarea
             placeholder="What's on your mind?"
             value={postContent}
@@ -50,7 +73,7 @@ const PostCard: React.FC = () => {
             className="w-full p-2 border-none bg-card-color focus:outline-none focus:ring-0"
             rows={4}
           />
-          <div className="absolute bottom-3 left-3 flex items-center space-x-2">
+          <div className="flex justify-between items-center">
             <label
               htmlFor="image-upload"
               className="text-blue-500 cursor-pointer hover:text-blue-600"
@@ -64,37 +87,16 @@ const PostCard: React.FC = () => {
                 className="hidden"
               />
             </label>
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+            >
+              Post
+            </button>
           </div>
-          <button
-            type="submit"
-            className="absolute bottom-3 right-3 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-          >
-            Post
-          </button>
         </form>
       </div>
-
-      {/* News Feed */}
-      <div className="mt-0 space-y-4">
-        {posts.length === 0 && (
-          <p className="text-center text-gray-500">
-            No posts yet. Start posting!
-          </p>
-        )}
-        {posts.map((post) => (
-          <div key={post.id} className="p-4 bg-white shadow-md ">
-            <p className="text-sm text-gray-500">{post.timestamp}</p>
-            <p className="mt-2">{post.content}</p>
-            {post.image && (
-              <img
-                src={post.image}
-                alt="Post"
-                className="mt-2 w-full rounded-md object-cover"
-              />
-            )}
-          </div>
-        ))}
-      </div>
+        <NewsFeed/>
     </div>
   );
 };

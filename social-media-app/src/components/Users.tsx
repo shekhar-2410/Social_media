@@ -12,7 +12,8 @@ interface Edge {
     following_id: string;
   };
 }
-// get users lists
+
+// GraphQL Queries and Mutations...
 const GET_USERS = gql`
   query {
     usersCollection {
@@ -27,7 +28,6 @@ const GET_USERS = gql`
   }
 `;
 
-// Get following ids
 const GET_FOLLOWING_IDS = gql`
   query GetFollowingIds($email: String!) {
     followsCollection(filter: { follower_email: { eq: $email } }) {
@@ -40,7 +40,6 @@ const GET_FOLLOWING_IDS = gql`
   }
 `;
 
-//follow a user
 const FOLLOW_USER = gql`
   mutation FollowUser($followerEmail: String!, $followingId: UUID!) {
     insertIntofollowsCollection(
@@ -54,7 +53,6 @@ const FOLLOW_USER = gql`
   }
 `;
 
-// unfollow a user
 const UNFOLLOW_USER = gql`
   mutation UnfollowUser($followerEmail: String!, $followingId: UUID!) {
     deleteFromfollowsCollection(
@@ -162,12 +160,12 @@ const UserList: React.FC = () => {
   return (
     <div className="bg-white p-4 shadow-md">
       <h2 className="font-bold text-lg mb-4">Users You Can Follow</h2>
-      <div className="relative overflow-hidden">
-        <div className="flex flex-wrap gap-4">
+      <div className="relative overflow-x-auto">
+        <div className="flex flex-nowrap gap-4">
           {users.map((user) => (
             <div
               key={user.id}
-              className="bg-card-color shadow-md overflow-hidden flex flex-col w-full sm:w-1/4 md:w-1/5 lg:w-1/4 h-40 rounded-md"
+              className="bg-card-color shadow-md overflow-hidden flex flex-col w-1/4 h-40 rounded-md"
             >
               <div className="p-2 flex-grow">
                 <div className="user-avatar flex items-center justify-center mb-2">

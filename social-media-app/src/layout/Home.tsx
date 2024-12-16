@@ -4,7 +4,7 @@ import {
   FaTachometerAlt,
   FaCog,
   FaLifeRing,
-} from "react-icons/fa"; 
+} from "react-icons/fa";
 import UserList from "../components/Users";
 import { useNavigate } from "react-router-dom";
 import userImg from "../assets/image.png";
@@ -12,23 +12,36 @@ import PostCard from "../components/Posts";
 import PopularNewsFeed from "../components/PopularFeed";
 import client from "../../apolloClient";
 import { gql } from "@apollo/client";
+import NewsFeed from "../components/NewsFeed";
 
 interface Edge {
   node: {
-    id: string;
+    following_id: string;
     following_name: string;
     follower_name: string;
   };
 }
 
-const GET_FOLLOWING_USERS = gql`
-  query {
-    follow_relationshipsCollection {
+// First query to get following_id
+const GET_FOLLOWING_IDS = gql`
+  query GetFollowingIds($email: String!) {
+    followsCollection(filter: { follower_email: { eq: $email } }) {
       edges {
         node {
-          id
-          following_name
-          follower_name
+          following_id
+        }
+      }
+    }
+  }
+`;
+
+// Second query to get following_name by following_id
+const GET_USER_NAME = gql`
+  query GetUserName($id: String!) {
+    usersCollection(filter: { id: { eq: $id } }) {
+      edges {
+        node {
+          name
         }
       }
     }
@@ -36,9 +49,9 @@ const GET_FOLLOWING_USERS = gql`
 `;
 
 const Home = () => {
-  const [following, setFollowing] = useState<
-    { id: string; following_name: string; follower_name: string }[]
-  >([]);
+  const [following, setFollowing] = useState<{ id: string; name: string }[]>(
+    []
+  );
 
   const [showMore, setShowMore] = useState(false);
   const navigate = useNavigate();
@@ -55,14 +68,33 @@ const Home = () => {
   }, []);
 
   const fetchFollowingUsers = async () => {
+    if (!user?.email) return;
     try {
+      // Fetch the following IDs first
       const { data } = await client.query({
-        query: GET_FOLLOWING_USERS,
+        query: GET_FOLLOWING_IDS,
+        variables: { email: user.email },
       });
 
-      setFollowing(
-        data.follow_relationshipsCollection.edges.map((edge: Edge) => edge.node)
+      // For each following_id, fetch the corresponding name from the users table
+      const followingData = await Promise.all(
+        data.followsCollection.edges.map(async (edge: Edge) => {
+          const followingId = edge.node.following_id;
+
+          // Fetch user name by following_id
+          const { data: userData } = await client.query({
+            query: GET_USER_NAME,
+            variables: { id: followingId },
+          });
+
+          return {
+            id: followingId,
+            name: userData.usersCollection.edges[0]?.node.name || "Unknown",
+          };
+        })
       );
+
+      setFollowing(followingData);
     } catch (error) {
       console.error("Error fetching following users:", error);
     }
@@ -115,13 +147,11 @@ const Home = () => {
                     <div className="flex items-center gap-2">
                       <div
                         className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold text-lg"
-                        title={user.following_name}
+                        title={user.name}
                       >
-                        {user.following_name.charAt(0).toUpperCase()}
+                        {user.name.charAt(0).toUpperCase()}
                       </div>
-                      <p className="text-sm text-gray-700">
-                        {user.following_name}
-                      </p>
+                      <p className="text-sm text-gray-700">{user.name}</p>
                     </div>
                   </li>
                 ))
@@ -167,14 +197,25 @@ const Home = () => {
       <div className="flex-1 bg-gray-100 p-6">
         <h1 className="text-2xl font-bold mb-6">User Dashboard</h1>
         <div className="space-y-6">
+          {/* Main grid container */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <PostCard />
-            <PopularNewsFeed />
-          </div>
+            {/* Left section with PostCard (50% width) */}
+            <div className="flex flex-col h-full">
+              <PostCard />
+            </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>{/* <NewsFeed /> */}</div>
-            <UserList />
+            {/* Right section with PopularNewsFeed and UserList */}
+            <div className="flex flex-col h-full space-y-6">
+              {/* PopularNewsFeed */}
+              <div className="flex flex-col h-full">
+                <PopularNewsFeed />
+              </div>
+
+              {/* UserList */}
+              <div className="flex flex-col h-full">
+                <UserList />
+              </div>
+            </div>
           </div>
         </div>
       </div>
