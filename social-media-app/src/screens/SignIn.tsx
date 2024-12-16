@@ -15,6 +15,7 @@ const SignIn: React.FC = () => {
     e.preventDefault();
     try {
       await logIn(email, password);
+
       navigate("/home");
     } catch (err) {
       if (err instanceof Error) {
