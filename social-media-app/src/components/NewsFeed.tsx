@@ -11,6 +11,8 @@ interface Post {
   post_image: string;
   created_at: string;
   user_name?: string;
+  dateA: Date;
+  dateB: Date;
 }
 
 const GET_USER_POSTS = gql`
@@ -80,12 +82,12 @@ const NewsFeed = () => {
         (edge: Edge) => edge.node.following_id
       );
       setFollowedUsers(new Set(followedUserIds));
+      console.log("Followed Users:", followedUserIds); // Debugging log
     } catch (err) {
       console.log("Error fetching followed users:", err);
     }
   };
 
-  // Fetch posts for followed users
   const fetchPosts = async () => {
     try {
       const { data } = await client.query({
@@ -96,17 +98,21 @@ const NewsFeed = () => {
         (edge: { node: Post }) => edge.node
       );
 
-      // Filter posts by followed users
-      const filteredPosts = newPosts.filter((post) =>
-        followedUsers.has(post.user_id)
+      // Get the logged-in user's ID
+      const userDetails = JSON.parse(localStorage.getItem("userUUID") || "{}");
+      const loggedInUserId = userDetails;
+
+      // Filter posts by followed users and include the logged-in user's posts
+      const filteredPosts = newPosts.filter(
+        (post: Post) =>
+          post.user_id === loggedInUserId || followedUsers.has(post.user_id)
       );
 
-      // Fetch missing user names
       const missingUserIds = Array.from(
         new Set(
           filteredPosts
-            .map((post) => post.user_id)
-            .filter((id) => !userNames[id])
+            .map((post: Post) => post.user_id)
+            .filter((id: string) => !userNames[id])
         )
       );
 
@@ -120,22 +126,32 @@ const NewsFeed = () => {
       const userNameResults = await Promise.all(userNamePromises);
 
       // Update user names
-      const newUserNames = userNameResults.reduce((acc, result, index) => {
-        const userId = missingUserIds[index];
-        const name =
-          result.data.usersCollection.edges[0]?.node.name || "Unknown User";
-        return { ...acc, [userId]: name };
-      }, {});
+      const newUserNames: { [key: string]: string } = userNameResults.reduce(
+        (acc, result, index) => {
+          const userId = missingUserIds[index] as string;
+          const name =
+            result.data.usersCollection.edges[0]?.node.name || "Unknown User";
+          return { ...acc, [userId]: name };
+        },
+        {}
+      );
 
       setUserNames((prev) => ({ ...prev, ...newUserNames }));
 
       // Attach user names to posts
-      const postsWithNames = filteredPosts.map((post) => ({
+      const postsWithNames = filteredPosts.map((post: Post) => ({
         ...post,
         user_name: newUserNames[post.user_id] || userNames[post.user_id],
       }));
 
-      setPosts(postsWithNames);
+      // Sort posts by date (latest to oldest)
+      const sortedPosts = postsWithNames.sort((a: Post, b: Post) => {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return dateB - dateA; // Latest first
+      });
+
+      setPosts(sortedPosts);
       setHasMorePosts(false); // No pagination; load all posts once
     } catch (error) {
       console.error("Error fetching posts:", error);
@@ -143,6 +159,7 @@ const NewsFeed = () => {
   };
 
   useEffect(() => {
+    // Fetch followed users and posts together
     fetchFollowedUsers();
   }, []);
 
@@ -190,7 +207,7 @@ const NewsFeed = () => {
                 <img
                   src={post.post_image}
                   alt="Post"
-                  className="mt-2 w-full h-auto rounded-lg"
+                  className="mt-2 w-24  rounded-lg"
                 />
               )}
             </li>

@@ -82,7 +82,24 @@ const UserList: React.FC = () => {
       );
       const email = userDetails.email || "";
 
+      if (!email) {
+        throw new Error("User email not found in local storage.");
+      }
+
       setLoggedInEmail(email);
+
+      // Fetch all users
+      const usersResponse = await client.query({ query: GET_USERS });
+
+      const allUsers: User[] = usersResponse.data.usersCollection.edges.map(
+        (edge: { node: User }) => edge.node
+      );
+
+      const loggedInUser = allUsers.find((user) => user.email === email);
+
+      if (loggedInUser) {
+        localStorage.setItem("userUUID", JSON.stringify(loggedInUser.id));
+      }
 
       // Fetch followed users
       const followsResponse = await client.query({
@@ -96,16 +113,11 @@ const UserList: React.FC = () => {
           (edge: Edge) => edge.node.following_id
         )
       );
-      // Fetch all users
-      const usersResponse = await client.query({ query: GET_USERS });
+
+      setFollowedUsers(userFollowingIds);
 
       // Filter out the logged-in user from the users list
-      setFollowedUsers(userFollowingIds);
-      setUsers(
-        usersResponse.data.usersCollection.edges
-          .map((edge: Edge) => edge.node)
-          .filter((user: User) => user.email !== email)
-      );
+      setUsers(allUsers.filter((user) => user.email !== email));
       setLoading(false);
     } catch (err) {
       setError("Error fetching data: " + String(err));
