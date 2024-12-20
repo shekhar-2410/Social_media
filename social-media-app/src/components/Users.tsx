@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { gql } from "@apollo/client";
 import client from "../../apolloClient";
+import { useFollowedUsers } from "../context/FollowedUsersContext";
 
 interface User {
   id: string;
   name: string;
   email: string;
 }
+
 interface Edge {
   node: {
     following_id: string;
@@ -70,10 +72,9 @@ const UserList: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
-
-  const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
-  const [loggedInEmail, setLoggedInEmail] = useState<string>("");
   const [buttonLoading, setButtonLoading] = useState<Set<string>>(new Set());
+  const { followedUsers, setFollowedUsers } = useFollowedUsers(); // Use context
+  const [loggedInEmail, setLoggedInEmail] = useState<string>("");
 
   const fetchData = async () => {
     try {
@@ -108,12 +109,13 @@ const UserList: React.FC = () => {
       });
 
       // Extract following IDs
-      const userFollowingIds = new Set(
+      const userFollowingIds: Set<string> = new Set(
         followsResponse.data.followsCollection.edges.map(
           (edge: Edge) => edge.node.following_id
         )
       );
 
+      // Update both context and local state
       setFollowedUsers(userFollowingIds);
 
       // Filter out the logged-in user from the users list

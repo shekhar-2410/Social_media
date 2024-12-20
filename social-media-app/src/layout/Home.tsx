@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import {
   FaSignOutAlt,
   FaTachometerAlt,
@@ -12,28 +12,7 @@ import PostCard from "../components/Posts";
 import PopularNewsFeed from "../components/PopularFeed";
 import client from "../../apolloClient";
 import { gql } from "@apollo/client";
-import NewsFeed from "../components/NewsFeed";
-
-interface Edge {
-  node: {
-    following_id: string;
-    following_name: string;
-    follower_name: string;
-  };
-}
-
-// First query to get following_id
-const GET_FOLLOWING_IDS = gql`
-  query GetFollowingIds($email: String!) {
-    followsCollection(filter: { follower_email: { eq: $email } }) {
-      edges {
-        node {
-          following_id
-        }
-      }
-    }
-  }
-`;
+import { useFollowedUsers } from "../context/FollowedUsersContext";
 
 // Second query to get following_name by following_id
 const GET_USER_NAME = gql`
@@ -49,6 +28,8 @@ const GET_USER_NAME = gql`
 `;
 
 const Home = () => {
+ 
+  const { followedUsers } = useFollowedUsers();
   const [following, setFollowing] = useState<{ id: string; name: string }[]>(
     []
   );
@@ -67,44 +48,37 @@ const Home = () => {
     }
   }, []);
 
-  const fetchFollowingUsers = async () => {
-    if (!user?.email) return;
-    try {
-      // Fetch the following IDs first
-      const { data } = await client.query({
-        query: GET_FOLLOWING_IDS,
-        variables: { email: user.email },
-      });
-
-      // For each following_id, fetch the corresponding name from the users table
-      const followingData = await Promise.all(
-        data.followsCollection.edges.map(async (edge: Edge) => {
-          const followingId = edge.node.following_id;
-
-          // Fetch user name by following_id
-          const { data: userData } = await client.query({
-            query: GET_USER_NAME,
-            variables: { id: followingId },
-          });
-
-          return {
-            id: followingId,
-            name: userData.usersCollection.edges[0]?.node.name || "Unknown",
-          };
-        })
-      );
-
-      setFollowing(followingData);
-    } catch (error) {
-      console.error("Error fetching following users:", error);
-    }
-  };
-
   useEffect(() => {
-    if (user) {
-      fetchFollowingUsers();
-    }
-  }, [user]);
+    const fetchFollowingUsers = async () => {
+      if (!user?.email) return; 
+      if (followedUsers.size === 0) {
+        setFollowing([]); // Set following to an empty array if no users are followed
+        return; 
+      }
+
+      try {
+        const followingData = await Promise.all(
+          Array.from(followedUsers).map(async (followingId) => {
+            const { data: userData } = await client.query({
+              query: GET_USER_NAME,
+              variables: { id: followingId },
+            });
+
+            return {
+              id: followingId,
+              name: userData.usersCollection.edges[0]?.node.name || "Unknown",
+            };
+          })
+        );
+
+        setFollowing(followingData);
+      } catch (error) {
+        console.error("Error fetching following users:", error);
+      }
+    };
+
+    fetchFollowingUsers();
+  }, [user, followedUsers]);
 
   const signOut = () => {
     localStorage.removeItem("UserDetails");
