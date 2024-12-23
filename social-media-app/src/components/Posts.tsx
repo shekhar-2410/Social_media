@@ -84,7 +84,7 @@ const PostCard: React.FC = () => {
   const [postContent, setPostContent] = useState<string>("");
   const [image, setImage] = useState<string | null>(null);
   const [postTitle, setPostTitle] = useState<string>("");
-
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const userId = JSON.parse(localStorage.getItem("userUUID") || "{}");
 
   const [insertPost] = useMutation(INSERT_POST, {
@@ -93,37 +93,31 @@ const PostCard: React.FC = () => {
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      const filePromises = Array.from(files).map((file) => {
-        const fileName = `uploads/${Date.now()}-${file.name}`;
-        console.log("Uploading file:", fileName);
+    if (files && files.length > 0) {
+      const file = files[0]; // Only handle one file for simplicity
+      const fileName = `uploads/${Date.now()}-${file.name}`;
 
-        return supabase.storage
-          .from("post-image")
-          .upload(fileName, file)
-          .then(({ data, error }) => {
-            if (error) {
-              console.error("Error uploading file:", error.message);
-              return null;
-            }
-            const publicUrl = getPublicUrl(data?.path || "");
-            console.log("Public URL:", publicUrl);
-            return publicUrl;
-          });
-      });
+      // Show the file name immediately to the user
+      setUploadedFileName(file.name);
 
-      Promise.all(filePromises).then((imageUrls) => {
-        const validUrls = imageUrls.filter(
-          (url): url is string => url !== null && url !== undefined
-        );
-        console.log("Final Valid URLs:", validUrls);
+      supabase.storage
+        .from("post-image")
+        .upload(fileName, file)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("Error uploading file:", error.message);
+            toast.error("Failed to upload image. Please try again.");
+            setUploadedFileName(null); // Reset the file name if upload fails
+            return;
+          }
 
-        if (validUrls.length > 0) {
-          setImage(validUrls[0]);
-        } else {
-          setImage("");
-        }
-      });
+          const publicUrl = getPublicUrl(data?.path || "");
+
+          if (publicUrl) {
+            setImage(publicUrl); // Set the image URL for the post
+            toast.success("Image uploaded successfully.");
+          }
+        });
     }
   };
 
@@ -239,8 +233,6 @@ const PostCard: React.FC = () => {
         "postgres_changes",
         { event: "*", schema: "public", table: "newsposts" },
         (payload) => {
-          console.log("Realtime change received:", payload);
-
           if (payload.eventType === "INSERT") {
             setPosts((prevPosts) => [payload.new as Post, ...prevPosts]);
           } else if (payload.eventType === "UPDATE") {
@@ -265,7 +257,6 @@ const PostCard: React.FC = () => {
       supabase.removeChannel(subscription);
     };
   }, [followedUsers]);
-  console.log(posts);
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -289,17 +280,20 @@ const PostCard: React.FC = () => {
           <div className="flex justify-between items-center">
             <label
               htmlFor="image-upload"
-              className="text-blue-500 cursor-pointer hover:text-blue-600"
+              className="text-blue-500 cursor-pointer hover:text-blue-600 flex items-center gap-2"
             >
               <FiImage className="w-6 h-6" />
+              <span>Upload Image</span>
               <input
                 type="file"
                 id="image-upload"
                 style={{ display: "none" }}
                 onChange={handleImageUpload}
-                multiple
               />
             </label>
+            {uploadedFileName && (
+              <span className="text-gray-600 text-sm">{uploadedFileName}</span>
+            )}
 
             <button
               type="submit"
