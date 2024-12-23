@@ -165,6 +165,21 @@ const PostCard: React.FC = () => {
 
   useEffect(() => {
     fetchPosts();
+    const subcribe = supabase
+      .channel("table-db-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "newsposts" },
+        (payload) => {
+          fetchPosts();
+          console.log(payload);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subcribe.unsubscribe();
+    };
   }, [followedUsers, userNames]);
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {

@@ -174,22 +174,23 @@ const UserList: React.FC = () => {
   return (
     <div className="bg-white p-4 shadow-md">
       <h2 className="font-bold text-lg mb-4">Users You Can Follow</h2>
+      {/* Scrolling container */}
       <div className="relative overflow-x-auto">
-        <div className="flex flex-nowrap gap-4">
+        <div className="flex gap-4">
           {users.map((user) => (
             <div
               key={user.id}
-              className="bg-card-color shadow-md overflow-hidden flex flex-col w-1/4 h-40 rounded-md"
+              className="bg-card-color shadow-md flex flex-col w-48 h-36 rounded-md"
             >
-              <div className="p-2 flex-grow">
-                <div className="user-avatar flex items-center justify-center mb-2">
-                  <span className="text-white bg-gray-600 rounded-full h-8 w-8 flex items-center justify-center text-sm">
+              <div className="p-4">
+                <div className="user-avatar flex items-center justify-center mb-4">
+                  <span className="text-white bg-gray-600 rounded-full h-6 w-6 flex items-center justify-center text-sm">
                     {user.name[0]}
                   </span>
                 </div>
                 <h5
-                  style={{ fontSize: "14px" }}
-                  className="font-semibold text-base text-center"
+                  className="font-semibold text-center text-sm truncate"
+                  title={user.name}
                 >
                   {user.name}
                 </h5>
@@ -203,7 +204,7 @@ const UserList: React.FC = () => {
                       user.id
                     )
                   }
-                  className={`w-24 py-2 px-6 rounded-full text-white font-semibold text-sm transition-colors duration-300 ${
+                  className={`w-20 py-2 px-4 rounded-full text-white  text-xs transition-colors duration-300 ${
                     isFollowing(user.id)
                       ? "bg-red-600 hover:bg-red-700"
                       : "bg-blue-600 hover:bg-blue-700"
