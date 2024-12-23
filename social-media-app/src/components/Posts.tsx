@@ -6,7 +6,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import client from "../../apolloClient";
 import { useFollowedUsers } from "../context/FollowedUsersContext.tsx";
 import { createClient } from "@supabase/supabase-js";
-
+import PostListItem from "./PostList.tsx";
 const SUPABASE_URL = "https://hwuczpdrsyqfddhqegjl.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3dWN6cGRyc3lxZmRkaHFlZ2psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNzE0MTgsImV4cCI6MjA0OTY0NzQxOH0.dFvyWUBuxPpAUm3LOtc1f8B3t0feIgcgJPIW3DR0BpI";
@@ -21,7 +21,6 @@ interface Post {
   created_at: string;
   user_name?: string;
 }
-
 const GET_USER_POSTS = gql`
   query GetUserPosts {
     newspostsCollection {
@@ -91,6 +90,75 @@ const PostCard: React.FC = () => {
   const [insertPost] = useMutation(INSERT_POST, {
     refetchQueries: [{ query: GET_USER_POSTS }],
   });
+
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const filePromises = Array.from(files).map((file) => {
+        const fileName = `uploads/${Date.now()}-${file.name}`;
+        console.log("Uploading file:", fileName);
+
+        return supabase.storage
+          .from("post-image")
+          .upload(fileName, file)
+          .then(({ data, error }) => {
+            if (error) {
+              console.error("Error uploading file:", error.message);
+              return null;
+            }
+            const publicUrl = getPublicUrl(data?.path || "");
+            console.log("Public URL:", publicUrl);
+            return publicUrl;
+          });
+      });
+
+      Promise.all(filePromises).then((imageUrls) => {
+        const validUrls = imageUrls.filter(
+          (url): url is string => url !== null && url !== undefined
+        );
+        console.log("Final Valid URLs:", validUrls);
+
+        if (validUrls.length > 0) {
+          setImage(validUrls[0]);
+        } else {
+          setImage("");
+        }
+      });
+    }
+  };
+
+  const getPublicUrl = (filePath: string) => {
+    return `${
+      supabase.storage.from("post-image").getPublicUrl(filePath).data.publicUrl
+    }`;
+  };
+
+  const handlePostSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!postContent || !postTitle) {
+      toast.error("Title and content are required!");
+      return;
+    }
+
+    const variables = {
+      user_id: userId,
+      title: postTitle,
+      content: postContent,
+      post_image: image || "",
+    };
+
+    try {
+      const { data } = await insertPost({ variables });
+      console.log(data);
+      toast.success("Post inserted successfully");
+      setPostTitle("");
+      setPostContent("");
+      setImage(null);
+    } catch (error) {
+      console.error("Error inserting post:", error);
+      toast.error("Failed to insert post. Please try again.");
+    }
+  };
 
   const fetchPosts = async () => {
     try {
@@ -165,94 +233,43 @@ const PostCard: React.FC = () => {
 
   useEffect(() => {
     fetchPosts();
-    const subcribe = supabase
-      .channel("table-db-changes")
+    const subscription = supabase
+      .channel("public:newsposts")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "newsposts" },
         (payload) => {
-          fetchPosts();
-          console.log(payload);
+          console.log("Realtime change received:", payload);
+
+          if (payload.eventType === "INSERT") {
+            setPosts((prevPosts) => [payload.new as Post, ...prevPosts]);
+          } else if (payload.eventType === "UPDATE") {
+            setPosts((prevPosts) =>
+              prevPosts.map((post) =>
+                post.id === (payload.new as Post).id
+                  ? (payload.new as Post)
+                  : post
+              )
+            );
+          } else if (payload.eventType === "DELETE") {
+            setPosts((prevPosts) =>
+              prevPosts.filter((post) => post.id !== payload.old.id)
+            );
+          }
         }
       )
       .subscribe();
 
+    // Cleanup subscription on unmount
     return () => {
-      subcribe.unsubscribe();
+      supabase.removeChannel(subscription);
     };
-  }, [followedUsers, userNames]);
-
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const filePromises = Array.from(files).map((file) => {
-        const fileName = `uploads/${Date.now()}-${file.name}`;
-        console.log("Uploading file:", fileName);
-
-        return supabase.storage
-          .from("post-image")
-          .upload(fileName, file)
-          .then(({ data, error }) => {
-            if (error) {
-              console.error("Error uploading file:", error.message);
-              return null;
-            }
-            const publicUrl = getPublicUrl(data?.path || "");
-            console.log("Public URL:", publicUrl);
-            return publicUrl;
-          });
-      });
-
-      Promise.all(filePromises).then((imageUrls) => {
-        const validUrls = imageUrls.filter(
-          (url): url is string => url !== null && url !== undefined
-        );
-        console.log("Final Valid URLs:", validUrls);
-
-        if (validUrls.length > 0) {
-          setImage(validUrls[0]);
-        } else {
-          setImage("");
-        }
-      });
-    }
-  };
-
-  const getPublicUrl = (filePath: string) => {
-    return `${
-      supabase.storage.from("post-image").getPublicUrl(filePath).data.publicUrl
-    }`;
-  };
-
-  const handlePostSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!postContent || !postTitle) {
-      toast.error("Title and content are required!");
-      return;
-    }
-
-    const variables = {
-      user_id: userId,
-      title: postTitle,
-      content: postContent,
-      post_image: image || "",
-    };
-
-    try {
-      const { data } = await insertPost({ variables });
-      console.log(data);
-      toast.success("Post inserted successfully");
-      setPostTitle("");
-      setPostContent("");
-      setImage(null);
-    } catch (error) {
-      console.error("Error inserting post:", error);
-      toast.error("Failed to insert post. Please try again.");
-    }
-  };
+  }, [followedUsers]);
+  console.log(posts);
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* commenting posts */}
       <div className="p-8 bg-card-color shadow-md">
         <form onSubmit={handlePostSubmit}>
           <input
@@ -293,10 +310,9 @@ const PostCard: React.FC = () => {
           </div>
         </form>
       </div>
-
+      {/* All follows posts */}
       <div className="bg-white p-4 shadow-md ">
         <h2 className="font-bold text-lg mb-4">All Posts</h2>
-
         <InfiniteScroll
           dataLength={posts.length}
           next={fetchPosts}
@@ -315,23 +331,7 @@ const PostCard: React.FC = () => {
             style={{ height: "265px", overflowY: "auto" }}
           >
             {posts.map((post) => (
-              <li key={post.id} className="border-b pb-3">
-                <h3 className="font-semibold text-xl">{post.title}</h3>
-                <p className="text-sm">{post.content}</p>
-                <p className="text-xs text-gray-400">
-                  Posted on: {new Date(post.created_at).toLocaleDateString()}
-                </p>
-                {post.user_name && (
-                  <p className="text-xs text-gray-500">By: {post.user_name}</p>
-                )}
-                {post.post_image && (
-                  <img
-                    src={post.post_image}
-                    alt="Post"
-                    className="mt-2 w-24 rounded-lg"
-                  />
-                )}
-              </li>
+              <PostListItem key={post.id} post={post} />
             ))}
           </ul>
         </InfiniteScroll>
