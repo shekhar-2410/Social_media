@@ -93,7 +93,10 @@ const PopularNewsFeed = () => {
                   slideIndex * cardsPerSlide + cardsPerSlide
                 )
                 .map((item, index) => (
-                  <div key={index} className="card-container shadow-md">
+                  <div
+                    key={index}
+                    className="card-container  bg-card-color"
+                  >
                     <div className="card-image">
                       {item.image && <img src={item.image} alt={item.title} />}
                     </div>
@@ -106,14 +109,7 @@ const PopularNewsFeed = () => {
                         <p className="text-xs text-gray-600">
                           {item.description}
                         </p>
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 text-xs"
-                        >
-                          Read more
-                        </a>
+                        
                       </div>
                     </div>
                   </div>
