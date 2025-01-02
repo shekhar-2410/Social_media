@@ -1,4 +1,5 @@
 # Social Media App
+https://news-posts-wheat.vercel.app
 
 A feature-rich social media application built with React, TypeScript, GraphQL, and Tailwind CSS. The app includes functionalities like user authentication, news feed, posting, following/unfollowing, and more.
 
