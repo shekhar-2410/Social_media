@@ -1,87 +1,140 @@
-import React, { useState } from "react";
-
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import "./style.css";
+interface NewsItem {
+  title: string;
+  description: string;
+  url: string;
+  urlToImage: string;
+}
 const PopularNewsFeed = () => {
-  const newsFeed = [
-    {
-      id: 1,
-      title: "React 18 Released",
-      description: "Discover the latest features in React 18.",
-      image:
-        "https://p16-va.lemon8cdn.com/tos-maliva-v-ac5634-us/5d42fff50a5c4256a61c78c20477c20f~tplv-tej9nj120t-origin.webp",
-    },
-    {
-      id: 2,
-      title: "Tailwind 3.0 is Here",
-      description: "Tailwind CSS introduces JIT engine.",
-      image:
-        "https://media.istockphoto.com/id/1682296067/photo/happy-studio-portrait-or-professional-man-real-estate-agent-or-asian-businessman-smile-for.jpg?s=612x612&w=0&k=20&c=9zbG2-9fl741fbTWw5fNgcEEe4ll-JegrGlQQ6m54rg=",
-    },
-    {
-      id: 3,
-      title: "Next.js 13 Features",
-      description: "Explore the new app directory and features in Next.js 13.",
-      image:
-        "https://media.istockphoto.com/id/1386479313/photo/happy-millennial-afro-american-business-woman-posing-isolated-on-white.jpg?s=612x612&w=0&k=20&c=8ssXDNTp1XAPan8Bg6mJRwG7EXHshFO5o0v9SIj96nY=",
-    },
-  ];
-
+  const [newsFeed, setNewsFeed] = useState<NewsItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  
+  const fetchNews = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `https://newsapi.org/v2/top-headlines?country=us&category=technology&apiKey=6a5cb52750f24102be352f817c03eb44`
+      );
+      setNewsFeed(response.data.articles);
+    } catch (error) {
+      console.error("Error fetching news:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const nextCard = () => {
-    if (currentIndex < newsFeed.length - 1) {
+  useEffect(() => {
+    fetchNews();
+  }, []);
+
+  const cardsPerSlide = 3; // Number of cards per slide
+  const totalSlides = Math.ceil(newsFeed.length / cardsPerSlide);
+
+  const nextSlide = () => {
+    if (currentIndex < totalSlides - 1) {
       setCurrentIndex(currentIndex + 1);
     }
   };
 
-  const prevCard = () => {
+  const prevSlide = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="bg-white p-4 shadow-md w-full max-w-4xl mx-auto">
+        <h2 className="font-bold text-lg mb-4">Popular News Feed</h2>
+        <div className="flex justify-center items-center h-64">
+          <span className="text-gray-500">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (newsFeed.length === 0) {
+    return (
+      <div className="bg-white p-4 shadow-md w-full max-w-4xl mx-auto">
+        <h2 className="font-bold text-lg mb-4">Popular News Feed</h2>
+        <div className="flex justify-center items-center h-64">
+          <span className="text-gray-500">No news available.</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white p-4 shadow-md">
-      <h2 className="font-bold text-lg mb-2">Popular News Feed</h2>
+    <div className="bg-white p-4 shadow-md w-full mx-auto h-80">
+      <h2 className="font-bold text-lg mb-4">Popular News Feed</h2>
       <div className="relative overflow-hidden">
+        {/* Slider Container */}
         <div
-          className="slider-container flex transition-transform duration-500"
+          className="flex transition-transform duration-500"
           style={{
             transform: `translateX(-${currentIndex * 100}%)`,
-            transition: currentIndex === newsFeed.length - 1 ? "none" : "transform 0.5s", 
+            width: `${totalSlides * 100}%`,
           }}
         >
-          {newsFeed.map((item) => (
+          {/* Group cards into slides */}
+          {Array.from({ length: totalSlides }).map((_, slideIndex) => (
             <div
-              key={item.id}
-              className="bg-card-color shadow-md overflow-hidden flex flex-col w-full"
+              key={slideIndex}
+              className="flex flex-wrap"
+              style={{ flex: "0 0 100%" }} // Each slide takes full width
             >
-              <img
-                src={item.image}
-                alt={item.title}
-                className="w-full h-32 object-cover"
-              />
-              <div className="p-4">
-                <h3 className="font-semibold text-lg">{item.title}</h3>
-                <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-              </div>
+              {newsFeed
+                .slice(
+                  slideIndex * cardsPerSlide,
+                  slideIndex * cardsPerSlide + cardsPerSlide
+                )
+                .map((item, index) => (
+                  <div key={index} className="card-container shadow-md">
+                    <div className="card-image">
+                      {item.urlToImage && (
+                        <img src={item.urlToImage} alt={item.title} />
+                      )}
+                    </div>
+                    <div className="card-title">
+                      <h3 className="font-semibold text-sm">{item.title}</h3>
+                    </div>
+                    {/* Hover effect reveals the content */}
+                    <div className="card-content">
+                      <div className="p-4">
+                        <p className="text-xs text-gray-600">
+                          {item.description}
+                        </p>
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 text-xs"
+                        >
+                          Read more
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                ))}
             </div>
           ))}
         </div>
 
         {/* Navigation Buttons */}
         <button
-          className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-gray-600 text-white px-4 py-2 rounded-full focus:outline-none"
-          onClick={prevCard}
-          disabled={currentIndex === 0} 
+          onClick={prevSlide}
+          disabled={currentIndex === 0}
+          className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-600 text-white px-3 py-2 rounded-full"
         >
           &lt;
         </button>
         <button
-          className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-gray-600 text-white px-4 py-2 rounded-full focus:outline-none"
-          onClick={nextCard}
-          disabled={currentIndex === 0}
+          onClick={nextSlide}
+          disabled={currentIndex === totalSlides - 1}
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-600 text-white px-3 py-2 rounded-full"
         >
           &gt;
         </button>

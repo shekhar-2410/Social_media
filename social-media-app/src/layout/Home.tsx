@@ -1,9 +1,10 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   FaSignOutAlt,
   FaTachometerAlt,
   FaCog,
   FaLifeRing,
+  FaBars,
 } from "react-icons/fa";
 import UserList from "../components/Users";
 import { useNavigate } from "react-router-dom";
@@ -28,7 +29,12 @@ const GET_USER_NAME = gql`
 `;
 
 const Home = () => {
- 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
+
   const { followedUsers } = useFollowedUsers();
   const [following, setFollowing] = useState<{ id: string; name: string }[]>(
     []
@@ -50,10 +56,10 @@ const Home = () => {
 
   useEffect(() => {
     const fetchFollowingUsers = async () => {
-      if (!user?.email) return; 
+      if (!user?.email) return;
       if (followedUsers.size === 0) {
         setFollowing([]); // Set following to an empty array if no users are followed
-        return; 
+        return;
       }
 
       try {
@@ -86,9 +92,21 @@ const Home = () => {
   };
 
   return (
-    <div className="flex">
-      {/* Left Sidebar */}
-      <div className="w-64 bg-gray-800 text-white min-h-screen p-6 flex flex-col">
+    <div className="flex flex-col md:flex-row ">
+      {/* Sidebar */}
+      <div
+        className={`${
+          isSidebarOpen ? "w-64" : "w-0"
+        } bg-gray-800 text-white min-h-screen p-6 transition-all duration-300 md:w-64 md:block flex flex-col absolute md:relative top-0 left-0 md:static`}
+      >
+        {/* Toggle Button for Mobile */}
+        <button
+          className="text-white md:hidden p-2 mb-4"
+          onClick={toggleSidebar}
+        >
+          <FaBars size={24} />
+        </button>
+
         {/* User Details */}
         <div className="flex items-center space-x-4 mb-8">
           <img
@@ -156,19 +174,24 @@ const Home = () => {
               <FaLifeRing className="mr-2" />
               Help
             </li>
+            <li>
+              <button
+                onClick={signOut}
+                className=" text-red-500 flex items-center mt-2"
+              >
+                <FaSignOutAlt className="mr-2" /> Log Out
+              </button>
+            </li>
           </ul>
         </div>
-
-        {/* Logout Button */}
-        <button
-          onClick={signOut}
-          className="mt-auto text-red-500 flex items-center"
-        >
-          <FaSignOutAlt className="mr-2" /> Log Out
-        </button>
       </div>
 
-      <div className="flex-1 bg-gray-100 p-6">
+      {/* Main Content */}
+      <div
+        className={`${
+          isSidebarOpen ? "ml-64" : "ml-0"
+        } flex-1 bg-gray-100 p-6 transition-all duration-300`}
+      >
         <h1 className="text-2xl font-bold mb-6">User Dashboard</h1>
         <div className="space-y-6">
           {/* Main grid container */}

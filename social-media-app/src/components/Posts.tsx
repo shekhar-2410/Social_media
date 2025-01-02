@@ -235,15 +235,8 @@ const PostCard: React.FC = () => {
         (payload) => {
           if (payload.eventType === "INSERT") {
             setPosts((prevPosts) => [payload.new as Post, ...prevPosts]);
-          } else if (payload.eventType === "UPDATE") {
-            setPosts((prevPosts) =>
-              prevPosts.map((post) =>
-                post.id === (payload.new as Post).id
-                  ? (payload.new as Post)
-                  : post
-              )
-            );
-          } else if (payload.eventType === "DELETE") {
+          } 
+           else if (payload.eventType === "DELETE") {
             setPosts((prevPosts) =>
               prevPosts.filter((post) => post.id !== payload.old.id)
             );
