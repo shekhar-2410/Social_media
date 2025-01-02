@@ -5,20 +5,21 @@ interface NewsItem {
   title: string;
   description: string;
   url: string;
-  urlToImage: string;
+  image: string;
 }
 const PopularNewsFeed = () => {
   const [newsFeed, setNewsFeed] = useState<NewsItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  console.log(newsFeed);
 
   const fetchNews = async () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `https://newsapi.org/v2/top-headlines?country=us&category=technology&apiKey=6a5cb52750f24102be352f817c03eb44`
+        `https://gnews.io/api/v4/top-headlines?country=us&category=technology&apikey=50e1f9c80b3beb3824b8f33b0dda1e94`
       );
-      setNewsFeed(response.data.articles);
+      setNewsFeed(response?.data?.articles);
     } catch (error) {
       console.error("Error fetching news:", error);
     } finally {
@@ -94,9 +95,7 @@ const PopularNewsFeed = () => {
                 .map((item, index) => (
                   <div key={index} className="card-container shadow-md">
                     <div className="card-image">
-                      {item.urlToImage && (
-                        <img src={item.urlToImage} alt={item.title} />
-                      )}
+                      {item.image && <img src={item.image} alt={item.title} />}
                     </div>
                     <div className="card-title">
                       <h3 className="font-semibold text-sm">{item.title}</h3>
