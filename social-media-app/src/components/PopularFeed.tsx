@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "./style.css";
+import "../style/style.css";
 interface NewsItem {
   title: string;
   description: string;
