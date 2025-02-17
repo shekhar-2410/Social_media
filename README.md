@@ -14,7 +14,7 @@ A feature-rich social media application built with React, TypeScript, GraphQL, a
 
 - **Posting:**
   - Create new posts with text and images.
-  - Tag other users in posts.
+  
 
 - **Follow and Unfollow:**
   - Follow and unfollow users to customize your feed.
